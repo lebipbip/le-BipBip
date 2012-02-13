@@ -17,7 +17,7 @@ CXX	=	$(CROSS)g++
 CPP	=	$(CROSS)gcc -E
 # linker: please redefine it in your own Makefile after including this file 
 # if you need to use gcc or ld instead of g++
-LD	=	$(CROSS)g++
+LD	=	$(CROSS)gcc
 NM	=	$(CROSS)nm
 OBJCOPY	=	$(CROSS)objcopy
 OBJDUMP	=	$(CROSS)objdump

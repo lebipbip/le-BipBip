@@ -6,7 +6,6 @@
 C_SRCS += \
 ../I2C.c \
 ../TI_USCI_I2C_master.c \
-../bluetooth.c \
 ../bmp085.c \
 ../booster.c \
 ../button.c \
@@ -24,7 +23,6 @@ C_SRCS += \
 OBJS += \
 ./I2C.o \
 ./TI_USCI_I2C_master.o \
-./bluetooth.o \
 ./bmp085.o \
 ./booster.o \
 ./button.o \
@@ -42,7 +40,6 @@ OBJS += \
 C_DEPS += \
 ./I2C.d \
 ./TI_USCI_I2C_master.d \
-./bluetooth.d \
 ./bmp085.d \
 ./booster.d \
 ./button.d \
@@ -60,10 +57,11 @@ C_DEPS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 %.o: ../%.c
-	@echo 'Building file: $<'
-	@echo 'Invoking: GCC C Compiler'
-	/usr/local/mspgcc/bin/msp430-gcc -mmcu=msp430g2553 -I/usr/local/mspgcc/msp430/include -I/usr/local/include -O2 -g -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
-	@echo 'Finished building: $<'
-	@echo ' '
+#	@echo 'Building file: $<'
+#	@echo 'Invoking: GCC C Compiler'
+#	/usr/bin/msp430-gcc -mmcu=msp430g2553 -I/usr/msp430/include -I/usr/local/include -O2 -g -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	/usr/bin/msp430-gcc -mmcu=msp430g2553 -I/usr/msp430/include -I/usr/local/include -O2 -g -Wall -c -o"$@" "$<"
+#	@echo 'Finished building: $<'
+#	@echo ' '
 
 

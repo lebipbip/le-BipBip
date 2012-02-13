@@ -28,7 +28,7 @@ all: solarclimb.elf
 solarclimb.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	/usr/local/mspgcc/bin/msp430-gcc -mmcu=msp430g2553 -L/usr/local/mspgcc/msp430/lib -L/usr/local/msp430/lib -o"solarclimb.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	/usr/bin/msp430-gcc -mmcu=msp430g2553 -L/usr/msp430/lib -o"solarclimb.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

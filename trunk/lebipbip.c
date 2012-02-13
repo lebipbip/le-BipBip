@@ -36,7 +36,6 @@
 #include "booster.h"
 #include "target.h"
 #include "sink.h"
-#include "bluetooth.h"
 
 /*
 typedef struct

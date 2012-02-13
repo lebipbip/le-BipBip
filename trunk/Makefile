@@ -25,12 +25,9 @@ VERSION_PATH = $(CONFIG)_$(TARGET)
 # Create dependencies
 MAKEDEPEND = gcc -M $(CPPFLAGS) -o $*.d $<
 
-CXXFLAGS=$(CFLAGS_OPT)
-CFLAGS=$(CFLAGS_OPT)
+CFLAGS += -I$(SRCDIR) -I$(CROSS_INCLUDES) -I/usr/local/include 
 
-CPPFLAGS =  -I$(SRCDIR) $(CPPFLAGS_ADD) -I$(CROSS_INCLUDES)
-
-BINARY = $(SRCDIR)/$(VERSION_PATH)/lebipbip
+BINARY = lebipbip.elf
 
 VPATH = $(SRCDIR)
 
@@ -58,13 +55,13 @@ bin_OBJS = $(bin_SOURCES_C:.c=.o)
 
 
 $(BINARY): $(bin_OBJS)
-	$(LD) -o $@ $^ $(LDFLAGS) $(LDADD)
+	$(LD) $(LDFLAGS) $(LDADD) -o $@ $^
 
 .SUFFIXES: .c .o 
 
 ## gcc-only version:
 %.o : %.c
-	$(COMPILE.c) -MD -o $@ $<
+	$(COMPILE.c) -MMD -o $@ $<
 	@cp $*.d $*.P; \
 	    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	        -e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
