@@ -7,7 +7,6 @@ default:
 
 
 include $(SRCDIR)/config/default.mk
--include $(SRCDIR)/config/local.mk
 -include $(SRCDIR)/config/local-$(CONFIG).mk
 -include $(SRCDIR)/config/local-$(TARGET).mk
 
@@ -25,7 +24,7 @@ VERSION_PATH = $(CONFIG)_$(TARGET)
 # Create dependencies
 MAKEDEPEND = gcc -M $(CPPFLAGS) -o $*.d $<
 
-CFLAGS += -I$(SRCDIR) -I$(CROSS_INCLUDES) -I/usr/local/include 
+CFLAGS += -I$(CROSS_INCLUDES) -I/usr/local/include 
 
 BINARY = lebipbip.elf
 
@@ -61,11 +60,7 @@ $(BINARY): $(bin_OBJS)
 
 ## gcc-only version:
 %.o : %.c
-	$(COMPILE.c) -MMD -o $@ $<
-	@cp $*.d $*.P; \
-	    sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
-	        -e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
-	    rm -f $*.d
+	$(CC) $(CFLAGS) $(CFLAGS_OPT) -o"$@" "$<"
 
 clean:
 	-rm -f $(BINARY) *.o  *~

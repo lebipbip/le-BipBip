@@ -2,7 +2,7 @@
 SRCDIR=..
 
 TARGET = msp430
-CONFIG = Debug
+CONFIG = debug
 
 all:
 	$(MAKE) -f "$(SRCDIR)/Makefile" SRCDIR="$(SRCDIR)" CONFIG="$(CONFIG)" TARGET="$(TARGET)" all

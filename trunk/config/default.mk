@@ -34,7 +34,6 @@ YFLAGS	=	-d
 # CFLAGS_OPT is normally in the config$(CONFIG).mk file,
 # but here's a reasonable default value
 # add -ftree-vectorizer-verbose=3 to get information about vectorized loops
-CFLAGS_OPT= -Wall  -Wmissing-declarations
 #CFLAGS_OPT= -Wall -g -O2
 
 CROSS_INCLUDES = /usr/msp430/include/
