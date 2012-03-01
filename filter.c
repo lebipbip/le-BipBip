@@ -26,16 +26,7 @@ int32_t LP_Filter(int32_t x)
 
 
 #define FILTER_INTEGER_FACTOR	2048
-/*
-// feedforward coefficients
-#define B_0  	38
-#define B_1  	0
-#define B_2  	-38
-// feedback coefficients,
-#define A_0 	2048
-#define A_1  	-4019
-#define A_2  	1973
-*/
+
 // feedforward coefficients
 #define B_0  	251
 #define B_1  	0

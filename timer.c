@@ -26,7 +26,7 @@ void TimerTA0Start()
 	B_SET(	TA0_1_DIR, 	TA0_1_PIN);			//BUZZER pin as output
 	B_SET(	TA0_1_SEL, 	TA0_1_PIN);			//BUZZER pin as output
 	B_UNSET(TA0_1_SEL2, TA0_1_PIN);			//BUZZER pin as timer output
-	TA0CCTL1 = OUTMOD_7;					// Output Mode 3: Reset/Set
+	TA0CCTL1 = OUTMOD_2;
 #endif //	TA0_1_PIN
 
 #ifdef 		TA0_2_PIN
@@ -35,10 +35,10 @@ void TimerTA0Start()
 	B_UNSET(TA0_2_OUT,	TA0_2_PIN);			//BUZZER pin as timer output
 	B_SET(	TA0_2_SEL, 	TA0_2_PIN);			//BUZZER pin as timer output
 	B_UNSET(TA0_2_SEL2, TA0_2_PIN);			//BUZZER pin as timer output
-	TA0CCTL2 = OUTMOD_7;					// Output Mode 7: Reset/Set
+	TA0CCTL2 = OUTMOD_6;
 #endif //	TA0_2_PIN
 
-	TA0CTL = TASSEL_2 +  MC_1 + ID_0;     // SMCLK, Up to CCR0 mode, Start timer
+	TA0CTL = TASSEL_2 +  MC_3 + ID_0;     // SMCLK, Up to CCR0 mode, Start timer
 }
 
 void TimerTA1Start()
@@ -53,22 +53,21 @@ void TimerTA1Start()
 
 #ifdef 		TA1_1_PIN
 	B_SET(	TA1_1_DIR, 	TA1_1_PIN);			//BUZZER pin as output
-	B_UNSET(TA1_1_OUT, 	TA1_1_PIN);		//BUZZER state as output
+	B_UNSET(TA1_1_OUT, 	TA1_1_PIN);			//BUZZER state as low
 	B_SET(	TA1_1_SEL, 	TA1_1_PIN);			//BUZZER pin as timer output
 	B_UNSET(TA1_1_SEL2, TA1_1_PIN);			//BUZZER pin as timer output
-	TA1CCTL1 = OUTMOD_7;
+	TA1CCTL1 = OUTMOD_2;
 #endif //	TA1_1_PIN
 
 #ifdef 		TA1_2_PIN
 	B_SET(	TA1_2_DIR, 	TA1_2_PIN);			//BUZZER pin as output
-	B_UNSET(TA1_2_OUT, 	TA1_2_PIN);		//BUZZER state as output
+	B_UNSET(TA1_2_OUT, 	TA1_2_PIN);			//BUZZER state as low
 	B_SET(	TA1_2_SEL, 	TA1_2_PIN);			//BUZZER pin as timer output
 	B_UNSET(TA1_2_SEL2, TA1_2_PIN);			//BUZZER pin as timer output
-
-	TA1CCTL2 = OUTMOD_3;
+	TA1CCTL2 = OUTMOD_6;
 #endif //	TA1_2_PIN
 
-	TA1CTL = TASSEL_2 +  MC_1 + ID_2;     // SMCLK, Up to CCR0 mode, Start timer
+	TA1CTL = TASSEL_2 +  MC_3 + ID_2;     // SMCLK, Up down mode, Start timer
 
 }
 

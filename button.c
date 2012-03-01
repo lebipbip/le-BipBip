@@ -8,7 +8,6 @@
 #include <legacymsp430.h>
 #include <stdint.h>
 #include "target.h"
-#include "bmp085.h"
 #include "power.h"
 #include "bithacks.h"
 #include "button.h"
@@ -43,47 +42,74 @@ uint8_t ButtonState()
 	return !B_IS_SET(BUTTON_PORT_IN, BUTTON_PIN_BIT);
 }
 
+#define BUTTON_DOUBLE_TIMEOUT	(400/TASK_PERIOD_MS)
+
+
 
 uint8_t Button()
 {
-	uint8_t button_state = 0;
+	uint8_t button_state = BUTTON_NONE;
+
 	static uint8_t button_last_state = 0;
 	static uint8_t button_tempo = 0;
+	static int16_t ButtonDoubleTimeout = 0;
+	static bool		ButtonDoubleOk = false;
+
 	if(!B_IS_SET(BUTTON_PORT_IN, BUTTON_PIN_BIT))
 	{
 
-			button_tempo++;
+		if((ButtonDoubleTimeout <= 0)||(ButtonDoubleTimeout == BUTTON_DOUBLE_TIMEOUT))
+		{
+			ButtonDoubleTimeout = BUTTON_DOUBLE_TIMEOUT;
+		}
+		else
+		{
+			ButtonDoubleOk = true;
+		}
+		button_tempo++;
 		if (button_tempo >= BUTTON_LONG_TEMPO)
 		{
 			button_state = BUTTON_LONG;
+			ButtonDoubleTimeout = -1;
 			button_last_state = button_state;
-			button_tempo = 0;
 		}
+		else
+			button_state = BUTTON_PRESSED;
+
+
+	}
+	else if (ButtonDoubleOk)
+	{
+		ButtonDoubleOk = false;
+		ButtonDoubleTimeout = -1;
+		button_state = BUTTON_DOUBLE;
 	}
 	else
 	{
-		if (button_last_state != BUTTON_LONG)
+		if (ButtonDoubleTimeout >= 0 )
 		{
-			if((button_tempo >= 1)&&(button_tempo < BUTTON_LONG_TEMPO))
-				button_state = BUTTON_SHORT;
-			/*else if((button_tempo > 3)&&(button_tempo < 5))
-				button_state = BUTTON_LONG;*/
+			ButtonDoubleTimeout--;
 		}
-		else
-			button_last_state = 0;
+		if (ButtonDoubleTimeout == 0)
+		{
+			button_state = BUTTON_SHORT;
+			ButtonDoubleTimeout = -1;
+		}
 		button_tempo = 0;
 	}
 
-#ifdef DEBUG
+#ifdef DEBUG_BUTTON
 	char printf_buff[30];
 	char printf_len = 0;
 	if(button_state == BUTTON_SHORT)
 		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_SHORT\n\r");
+	else if(button_state == BUTTON_DOUBLE)
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_DOUBLE\n\r");
 	else if(button_state == BUTTON_LONG)
 		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_LONG\n\r");
 	if(button_state != BUTTON_NONE )
 		UartXmitString(printf_buff);
-#endif //DEBUG
+#endif //DEBUG_BUTTON
 	return button_state;
 }
 
@@ -116,4 +142,3 @@ interrupt(BUTTON_PORT_VECTOR) Button_ISR(void)
 
 	}
 }
-

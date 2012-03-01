@@ -41,11 +41,20 @@
 /* test if n-th bit in x is set */
 #define B_IS_SET(x, n)   (((x) & (1<<(n)))?1:0)
 
+/* test if n-th bit in x is set */
+#define B_IS_SET_MASK(x, n)   (((x) & (n))?1:0)
+
 /* set n-th bit in x */
 #define B_SET(x, n)      ((x) |= (1<<(n)))
 
 /* unset n-th bit in x */
 #define B_UNSET(x, n)    ((x) &= ~(1<<(n)))
+
+/* set mask bit in x */
+#define B_SET_MASK(x, n)      ((x) |= (n))
+
+/* unset mask bit in x */
+#define B_UNSET_MASK(x, n)    ((x) &= ~(n))
 
 /* toggle n-th bit in x */
 #define B_TOGGLE(x, n)   ((x) ^= (1<<(n)))

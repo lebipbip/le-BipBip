@@ -9,7 +9,7 @@
 #include "target.h"
 #include "vario.h"
 #include "timer.h"
-#include "booster.h"
+#include "charge_pump.h"
 #include "button.h"
 //#define BUZZER_DISABLED
 
@@ -29,16 +29,26 @@ void BuzzerResetSound()
 
 }
 
-void BuzzerDemoSoundTacTac()
+void BuzzerDemoSoundTacTacOn()
 {
-	BuzzerSetFrequency(0);
 	BuzzerSetBlocking(0,200);
-	BuzzerSetBlocking(20,100);
+	BuzzerSetBlocking(20,200);
 	BuzzerSetBlocking(0,200);
-	BuzzerSetBlocking(20,100);
+	BuzzerSetBlocking(30,150);
 	BuzzerSetBlocking(0,200);
-	BuzzerSetBlocking(20,100);
+	BuzzerSetBlocking(40,100);
 }
+
+void BuzzerDemoSoundTacTacOff()
+{
+	BuzzerSetBlocking(0,200);
+	BuzzerSetBlocking(40,100);
+	BuzzerSetBlocking(0,200);
+	BuzzerSetBlocking(30,150);
+	BuzzerSetBlocking(0,200);
+	BuzzerSetBlocking(20,200);
+}
+
 
 void BuzzerDemoSound()
 {
@@ -80,12 +90,13 @@ void BuzzerStopSound()
 
 
 #define DEFAULT_VOLUME_MODE				2
-static char BuzzerVolumeValue = 		POWER_VOLUME_HIG;
 static char BuzzerSoundMode = 			DEFAULT_VOLUME_MODE;
 #define BUZZER_BUTTON_TIMEOUT_MS		4000
 #define BUZZER_BUTTON_TIMEOUT			BUZZER_BUTTON_TIMEOUT_MS/TASK_PERIOD_MS
 
 static int BuzzerButtonTemp = 0;
+
+
 
 void BuzzerSetVolume(char button)
 {
@@ -108,7 +119,7 @@ void BuzzerSetVolume(char button)
 	if (button != BUTTON_SHORT)
 		return;
 
-	if (BuzzerSoundMode > 4)
+	if (BuzzerSoundMode > 3)
 		BuzzerSoundMode = 1;
 
 #ifdef DEBUG
@@ -121,49 +132,35 @@ void BuzzerSetVolume(char button)
 	switch(BuzzerSoundMode)
 	{
 		case 1:
-			BuzzerVolumeValue = POWER_VOLUME_LOW;
-			BoosterSetPower(BuzzerVolumeValue);
-			VarioSetStationaryMode(true);
-			BuzzerDemoSoundTacTac();
+			ChargePumpSetPower(POWER_VOLUME_LOW);
 			BuzzerDemoSound();
 
 			break;
 		case 2:
-			BuzzerVolumeValue = POWER_VOLUME_HIG;
-			BoosterSetPower(BuzzerVolumeValue);
-			VarioSetStationaryMode(true);
-			BuzzerDemoSoundTacTac();
+			ChargePumpSetPower(POWER_VOLUME_MED);
 			BuzzerDemoSound();
-
 			break;
 		case 3:
-			BuzzerVolumeValue = POWER_VOLUME_LOW;
-			BoosterSetPower(BuzzerVolumeValue);
-			VarioSetStationaryMode(false);
+			ChargePumpSetPower(POWER_VOLUME_HIG);
 			BuzzerDemoSound();
 			break;
-		case 4:
-			BuzzerVolumeValue = POWER_VOLUME_HIG;
-			BoosterSetPower(BuzzerVolumeValue);
-			VarioSetStationaryMode(false);
-			BuzzerDemoSound();
-			break;
+		default:
+			BuzzerSoundMode = 1;
 	}
+	BuzzerSetQueue( 0, 100);
 }
 
-#define BUZZER_ON_TIME		(ccr0/2)
+#define BUZZER_DEAD_TIME_CYCLE	2
 void BuzzerSetFrequency(unsigned int freq)
 {
 	if (freq)
 	{
-		int ccr0 = (CPU_FREQUENCY/4)/(freq);
-
-		TimerTA1Set(ccr0, BUZZER_ON_TIME, ccr0 );
-		BoosterStart();
+		int ccr0 = (CPU_FREQUENCY/8)/(freq);
+		int ccr0_2 = ccr0/2;
+		TimerTA1Set(ccr0, ccr0_2-BUZZER_DEAD_TIME_CYCLE, ccr0-ccr0_2+BUZZER_DEAD_TIME_CYCLE );
 	}
 	else
 	{
-		BoosterStop();
 		TimerTA1Stop();
 	}
 }

@@ -17,4 +17,9 @@ void BuzzerTask();
 void BuzzerStop();
 void BuzzerDemoSound();
 void BuzzerSetVolume(char button);
+
+void BuzzerDemoSoundTacTacOn();
+void BuzzerDemoSoundTacTacOff();
+
+
 #endif //BUZZER_H_INCLUDED

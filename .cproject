@@ -60,7 +60,7 @@
 </folderInfo>
 <fileInfo id="cdt.managedbuild.config.gnu.exe.debug.1438841.1984257935" name="data.h" rcbsApplicability="disable" resourcePath="data.h" toolsToInvoke=""/>
 <sourceEntries>
-<entry excluding="tone.h|tone.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+<entry excluding="bmp085.h|bmp085.c|tone.h|tone.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 </sourceEntries>
 </configuration>
 </storageModule>
@@ -358,7 +358,7 @@
 </toolChain>
 </folderInfo>
 <sourceEntries>
-<entry excluding="tone.h|tone.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+<entry excluding="bmp085.h|bmp085.c|tone.h|tone.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 </sourceEntries>
 </configuration>
 </storageModule>

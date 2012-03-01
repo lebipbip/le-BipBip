@@ -9,7 +9,7 @@
 #define VARIO_H_
 #include <stdbool.h>
 #include <stdint.h>
-void VarioSetStationaryMode(bool enable);
+void VarioToggleStationaryMode(void);
 bool Vario(int32_t PressureDerivated);
-
+void VarioDisableFor(int32_t time_ms);
 #endif /* VARIO_H_ */

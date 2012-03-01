@@ -10,7 +10,7 @@
 
 static int AutoPowerOffCountDown = AUTOPOWER_OFF_TIME_S*TASK_PERIOD_MS;
 
-//#define POWER_DISABLE_ADC
+
 
 unsigned char AutoPowerOffCheck(void)
 {
@@ -43,10 +43,10 @@ void BatteryCheckStop(void)
 }
 #define VREF			3300
 #define ADCRANGE		1024
-#define VLOWBATT 		931		// 3000 mV
-#define VMEDIUMBATT		993		// 3200 mV
-
-
+//#define VLOWBATT 		1000		// 3000 mV
+//#define VMEDIUMBATT	993		// 3200 mV
+#define VMEDIUMBATT		810
+#define VLOWBATT 		800
 
 static char BatteryState = 0;
 
@@ -67,14 +67,14 @@ void BatteryCheck(void)
 	while (ADC10CTL1 & ADC10BUSY)// ADC10BUSY?
 		;	// wait
 	adc_val = ADC10MEM;
-	/*#ifdef DEBUG
+	#ifdef ADC_DEBUG_OUTPUT
 	char printf_buff[100];
 	char printf_len = 0;
 	unsigned long BattVal = adc_val;
 	printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Battery: %ld\n\r", BattVal);
 	printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Battery: %ld V\n\r", (BattVal*VREF)/ADCRANGE);
 	UartXmitString(printf_buff);
-	#endif //DEBUG*/
+	#endif //ADC_DEBUG_OUTPUT
 
 	if ( adc_val < VLOWBATT )
 		BatteryState = 1;                      // low batt

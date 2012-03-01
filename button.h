@@ -18,7 +18,7 @@ enum BUTTONSTATES
 	BUTTON_SHORT,
 	BUTTON_LONG,
 	BUTTON_DOUBLE,
-	button_first_double
+	BUTTON_PRESSED,
 };
 
 

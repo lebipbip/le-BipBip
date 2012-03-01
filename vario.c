@@ -70,17 +70,31 @@
 
 #define VARIO_AUTO_OFF_UP_DOWN_LIMIT	10
 
-static int Vario_UnderSample = 0;
+static int32_t Vario_UnderSample = 0;
 static bool Vario_Mode_Stationary = true;
 
 
-void VarioSetStationaryMode(bool enable)
+void VarioToggleStationaryMode()
 {
-	if (enable)
-		Vario_Mode_Stationary = true;
-	else
+	if (Vario_Mode_Stationary)
+	{
+		BuzzerDemoSoundTacTacOff();
 		Vario_Mode_Stationary = false;
+	}
+	else
+	{
+		BuzzerDemoSoundTacTacOn();
+		Vario_Mode_Stationary = true;
+	}
+
+	BuzzerSetQueue( 0, 100);
 }
+
+void VarioDisableFor(int32_t time_ms)
+{
+	Vario_UnderSample = time_ms;
+}
+
 
 bool Vario(int32_t PressureDerivated)
 {
