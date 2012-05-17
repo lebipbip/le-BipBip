@@ -68,6 +68,25 @@ profile correctly configured.
 Loading the code
 ================
 
-TODO. Should be something like::
+To load the code, you need to use ''mspdebug'' :
 
   $ mspdebug rf2500 -q "prog solarclimb.elf"
+
+''solarclimb.elf'' being the compiled software (in ELF format) you want to program
+on the device.
+
+You should get an output similar to:
+
+  Trying to open interface 1 on 002
+  Device: MSP430G2553
+  fet: FET returned NAK
+  Erasing...
+  Programming...
+  Done, 11184 bytes written
+
+If instead, you have an error, like:
+
+  usbutil: unable to find a device matching 0451:f432
+
+You may need to fix permission on the jtag USB device (to be sure, try to prefix
+the command with ''sudo'').
