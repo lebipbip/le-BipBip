@@ -8,6 +8,12 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
+#include <stdint.h>
+#include <stdbool.h>
+
+void TimerRegister(uint16_t cycle);
+void TimerWait();
+void TimerDisable(void);
 
 void TimerTA0Start();
 void TimerTA1Start();

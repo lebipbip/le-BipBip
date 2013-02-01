@@ -8,84 +8,106 @@
 #include "target.h"
 #include "uart.h"
 
-static int AutoPowerOffCountDown = AUTOPOWER_OFF_TIME_S*TASK_PERIOD_MS;
+
+static uint64_t AutoPowerOffCountDownCycle = AUTOPOWER_OFF_TIME_S;
+static uint8_t  AutoPowerOffSecondCounter	= 0;
+
+#define ADCRANGE					1024
+#define VREF						2500
+#define VCC_INPUT_COEF				2 		//INCH_11 = (Vcc-Vss)/2
+#define LOW_BATTERY_VOLTAGE			3000	// mV, before Over- discharge detection voltage (2700mV)
 
 
 
-unsigned char AutoPowerOffCheck(void)
+bool AutoPowerOffSecond(void)
 {
-	if(--AutoPowerOffCountDown)
-		return 0;
+	if(AutoPowerOffSecondCounter)
+	{
+		AutoPowerOffSecondCounter--;
+		return false;
+	}
 	else
-		return 1;
+	{
+		AutoPowerOffSecondCounter = 1000/TASK_PERIOD_MS;
+		return true;
+	}
+}
+
+bool AutoPowerOffTrue(void)
+{
+	if(AutoPowerOffSecond())
+	{
+		if(AutoPowerOffCountDownCycle == 0)
+			return true;
+		else
+			AutoPowerOffCountDownCycle--;
+			return false;
+	}
+	else
+		return false;
 }
 void AutoPowerOffReset(void)
 {
-	AutoPowerOffCountDown = AUTOPOWER_OFF_TIME_S*TASK_PERIOD_MS;
+	AutoPowerOffCountDownCycle = AUTOPOWER_OFF_TIME_S;
+}
+uint16_t BatteryGetVoltage(void)
+{
+	uint32_t adc_val;
+	ADC10CTL0 |= ENC + ADC10SC;             // Sampling and conversion start
+	while (ADC10CTL1 & ADC10BUSY);	// wait
+	adc_val = ADC10MEM;
+	return (uint16_t)((VREF*adc_val*2)/ADCRANGE);
 }
 
 void BatteryCheckInit(void)
 {
-#ifndef POWER_DISABLE_ADC
-	  ADC10CTL0 = SREF_1 + ADC10SHT_2 + REFON + ADC10ON;
-	  ADC10CTL1 = INCH_11;                   //(Vcc-Vss)/2
-	  delay_ms(10);							// time for ref to settle
-#endif //POWER_DISABLE_ADC
+	ADC10CTL0 = SREF_1 + ADC10SHT_2 + REFON + REF2_5V + ADC10ON;
+	ADC10CTL1 = INCH_11;                   	//(Vcc-Vss)/2
+	delay_ms(1);							// time for ref to settle
+}
+
+void BatteryPrintVoltage(void)
+{
+	uint16_t BatteryVoltage = BatteryGetVoltage();
+	char printf_buff[100];
+	char printf_len = 0;
+	printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "MCU VCC: %dmV %s", BatteryVoltage, ICT_TAB_STRING);
+	if (BatteryVoltage > 3000 && BatteryVoltage < 3600 )
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "OK\n\r");
+	else
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "FAIL\n\r");
+	UartXmitString(printf_buff);
 }
 
 
 void BatteryCheckStop(void)
 {
-#ifndef POWER_DISABLE_ADC
 	ADC10CTL0 &= ~ENC;                        // ADC10 disabled
 	ADC10CTL0 = 0;                            // ADC10, Vref disabled completely
-#endif //POWER_DISABLE_ADC
 }
-#define VREF			3300
-#define ADCRANGE		1024
-//#define VLOWBATT 		1000		// 3000 mV
-//#define VMEDIUMBATT	993		// 3200 mV
-#define VMEDIUMBATT		810
-#define VLOWBATT 		800
 
-static char BatteryState = 0;
+
+static char BatteryState = 1;
 
 bool BatteryIsLow(void)
 {
-	if (BatteryState== 1)
-		return 1;
-	return 0;
+	if (BatteryState == 0)
+		return true;
+	else
+		return false;
 }
-
-
 
 void BatteryCheck(void)
 {
 #ifndef POWER_DISABLE_ADC
-	int adc_val;
-	ADC10CTL0 |= ENC + ADC10SC;             // Sampling and conversion start
-	while (ADC10CTL1 & ADC10BUSY)// ADC10BUSY?
-		;	// wait
-	adc_val = ADC10MEM;
-	#ifdef ADC_DEBUG_OUTPUT
-	char printf_buff[100];
-	char printf_len = 0;
-	unsigned long BattVal = adc_val;
-	printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Battery: %ld\n\r", BattVal);
-	printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Battery: %ld V\n\r", (BattVal*VREF)/ADCRANGE);
-	UartXmitString(printf_buff);
-	#endif //ADC_DEBUG_OUTPUT
-
-	if ( adc_val < VLOWBATT )
-		BatteryState = 1;                      // low batt
-	else if (adc_val > VMEDIUMBATT)
-		BatteryState =  0;                      // batt ok
+	if ( BatteryGetVoltage() < LOW_BATTERY_VOLTAGE )
+		BatteryState = 0;                      // low batt
 	else
-		BatteryState =  2;                      // medium batt
-#else //POWER_DISABLE_ADC
-
+		BatteryState = 1;                      // batt ok
 #endif //POWER_DISABLE_ADC
-
 }
+
+
+
 
 

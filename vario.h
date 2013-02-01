@@ -12,4 +12,6 @@
 void VarioToggleStationaryMode(void);
 bool Vario(int32_t PressureDerivated);
 void VarioDisableFor(int32_t time_ms);
+
+
 #endif /* VARIO_H_ */

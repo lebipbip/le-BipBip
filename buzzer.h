@@ -1,7 +1,13 @@
+
+#include <stdbool.h>
+#include <stdint.h>
 #ifndef BUZZER_H_INCLUDED
 #define BUZZER_H_INCLUDED
 
-
+const char * const song;
+void play( const char *song);
+extern const char * stringSink;
+extern const char * stringLift;
 void BuzzerResetSound();
 void BuzzerStart();
 void BuzzerSetFrequency(unsigned int freq);    // set pitch freq
@@ -21,5 +27,8 @@ void BuzzerSetVolume(char button);
 void BuzzerDemoSoundTacTacOn();
 void BuzzerDemoSoundTacTacOff();
 
+
+void CheckBuzzerStart(void);
+void CheckBuzzer(bool mode);
 
 #endif //BUZZER_H_INCLUDED

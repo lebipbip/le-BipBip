@@ -5,8 +5,8 @@
  *      Author: timothee
  */
 
-#ifndef CHARGE_PUMP_H
-#define CHARGE_PUMP_H
+#ifndef BOOSTER_H_
+#define BOOSTER_H_
 
 enum
 {
@@ -21,4 +21,4 @@ void ChargePumpStop();
 
 void ChargePumpDemo(void);
 
-#endif /* CHARGE_PUMP_H */
+#endif /* BOOSTER_H_ */

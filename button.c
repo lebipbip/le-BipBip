@@ -16,13 +16,33 @@
 #include "sink.h"
 #include "uart.h"
 #include <stdio.h>
+#include "charge_pump.h"
 
 void ButtonInit()
 {
 	B_UNSET(BUTTON_PORT_DIR, BUTTON_PIN_BIT);		// set as input
 	B_UNSET( BUTTON_PORT_IFG, BUTTON_PIN_BIT);		// IFG cleared
 	B_SET( BUTTON_PORT_IES, BUTTON_PIN_BIT);		// high-to-low transition
-	__enable_interrupt();
+
+	char printf_buff[140];
+	snprintf(printf_buff, sizeof(printf_buff), "Button released...%s", ICT_TAB_STRING);
+	UartXmitString(printf_buff);
+	int timeout = 200;
+	while( !ButtonState() &&  timeout)
+	{
+		timeout--;
+		delay_ms(1);
+	}
+	if ( timeout == 0 )
+	{
+		snprintf(printf_buff, sizeof(printf_buff), "OK\n\r");
+
+	}
+	else// button pressed or floating pin
+	{
+		snprintf(printf_buff, sizeof(printf_buff), "FAIL\n\r");
+	}
+	UartXmitString(printf_buff);
 }
 
 void ButtonEnableInterrupt()
@@ -67,7 +87,7 @@ uint8_t Button()
 			ButtonDoubleOk = true;
 		}
 		button_tempo++;
-		if (button_tempo >= BUTTON_LONG_TEMPO)
+		if (button_tempo >= BUTTON_LONG_TIMEOUT)
 		{
 			button_state = BUTTON_LONG;
 			ButtonDoubleTimeout = -1;
@@ -102,13 +122,20 @@ uint8_t Button()
 	char printf_buff[30];
 	char printf_len = 0;
 	if(button_state == BUTTON_SHORT)
-		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_SHORT\n\r");
-	else if(button_state == BUTTON_DOUBLE)
-		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_DOUBLE\n\r");
-	else if(button_state == BUTTON_LONG)
-		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "BUTTON_LONG\n\r");
-	if(button_state != BUTTON_NONE )
+	{
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Button short\n\r");
 		UartXmitString(printf_buff);
+	}
+	else if(button_state == BUTTON_DOUBLE)
+	{
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Button double\n\r");
+	UartXmitString(printf_buff);
+}
+	else if(button_state == BUTTON_LONG)
+	{
+		printf_len += snprintf(printf_buff+printf_len, sizeof(printf_buff)-printf_len, "Button long\n\r");
+	UartXmitString(printf_buff);
+}
 #endif //DEBUG_BUTTON
 	return button_state;
 }
@@ -116,12 +143,15 @@ uint8_t Button()
 
 interrupt(BUTTON_PORT_VECTOR) Button_ISR(void)
 {
+	B_UNSET(BUTTON_PORT_IFG, BUTTON_PIN_BIT);		// clear IFG
+	PowerExitUltraLowPower();		// resume system main loop
+/*	ChargePumpStart();
 	if (B_IS_SET(BUTTON_PORT_IFG, BUTTON_PIN_BIT))		// Button pressed interrupt
 	{
 		B_UNSET(BUTTON_PORT_IFG, BUTTON_PIN_BIT);		// clear IFG
-		delay_ms(75);
+		delay_ms(100);
 		BuzzerSetBlocking(600,120);
-		int timeout = 2000;
+		int timeout = SINK_ENTER_SINK_SETTING_TIMEOUT_MS;
 		while(ButtonState() && timeout--)
 		{
 			delay_ms(1);
@@ -134,11 +164,11 @@ interrupt(BUTTON_PORT_VECTOR) Button_ISR(void)
 		else// timeout = enter sink setting
 		{
 			SinkSetting();
-			// return to low power
+			// then return to low power
 			ButtonDisableInterrupt();
 			ButtonEnableInterrupt();
-
+			ChargePumpStop();
 		}
-
 	}
+	*/
 }

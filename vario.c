@@ -7,174 +7,103 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <math.h>
 #include "vario.h"
 #include "buzzer.h"
 #include "sink.h"
 #include "target.h"
+#include "vario_LUT.h"
+#include "vario_settings.h"
+#include "filter.h"
 
-#define VARIO_POSITIVE_FREQ_6 		2400
-#define VARIO_POSITIVE_FREQ_COEF_6	9
-#define VARIO_POSITIVE_BPS_COEF_6	6
-
-#define VARIO_POSITIVE_LIMIT_6  	200
-
-#define VARIO_POSITIVE_FREQ_5 		2200
-#define VARIO_POSITIVE_FREQ_COEF_5	9
-#define VARIO_POSITIVE_BPS_COEF_5	6
-
-#define VARIO_POSITIVE_LIMIT_5  	100
-
-#define VARIO_POSITIVE_FREQ_4 		2000
-#define VARIO_POSITIVE_FREQ_COEF_4	9
-#define VARIO_POSITIVE_BPS_COEF_4	6
-
-#define VARIO_POSITIVE_LIMIT_4  	50
-
-#define VARIO_POSITIVE_FREQ_3 		1500
-#define VARIO_POSITIVE_FREQ_COEF_3	9
-#define VARIO_POSITIVE_BPS_COEF_3	6
-
-#define VARIO_POSITIVE_LIMIT_3  	30
-
-#define VARIO_POSITIVE_FREQ_2 		1000
-#define VARIO_POSITIVE_FREQ_COEF_2	9
-#define VARIO_POSITIVE_BPS_COEF_2	6
-
-#define VARIO_POSITIVE_LIMIT_2  	10
-
-#define VARIO_POSITIVE_FREQ_1 		600
-#define VARIO_POSITIVE_FREQ_COEF_1	1
-#define VARIO_POSITIVE_BPS_COEF_1	5
-
-#define VARIO_POSITIVE_LIMIT_1  	5
+#define VARIO_POSITIVE_UPPER_LIMIT 			(sizeof(BeepFreqLUT)/(sizeof(BeepFreqLUT[0]))*VARIO_LUT_STEP)-1
+#define VARIO_POSITIVE_LOWER_LIMIT  		VarioSettingGetValue() // cm.s-1
 
 
-#define VARIO_STATIONARY_UPPER_LIMIT  	4
+#define VARIO_STATIONARY_UPPER_LIMIT  		VARIO_POSITIVE_LOWER_LIMIT
 		//beeps within theses limits for stationary
-#define VARIO_STATIONARY_LOWER_LIMIT  	-2
+#define VARIO_STATIONARY_LOWER_LIMIT  		-10
 
-#define VARIO_STATIONARY_LOWER_RANGE  	VARIO_STATIONARY_UPPER_LIMIT + abs(VARIO_STATIONARY_LOWER_LIMIT)
-#define VARIO_STATIONARY_FREQ_COEF		1
-#define VARIO_STATIONARY_BASE_FREQ 		10
-#define VARIO_STATIONARY_BASE_LEN 		40
+#define VARIO_STATIONARY_LOWER_RANGE  		VARIO_STATIONARY_UPPER_LIMIT + abs(VARIO_STATIONARY_LOWER_LIMIT)
+#define VARIO_STATIONARY_FREQ_COEF			1
+#define VARIO_STATIONARY_BASE_FREQ 			10
+#define VARIO_STATIONARY_BASE_LEN 			40
 #define VARIO_STATIONARY_UNDERSAMPLE_COEF	4
 
-#define VARIO_NEGATIVE_UPPER_LIMIT  	-10
-		//beeps within theses limits for sink
-#define VARIO_NEGATIVE_LOWER_LIMIT  	-50
 
-#define VARIO_NEGATIVE_BASE_FREQ 		120
-#define VARIO_NEGATIVE_FREQ_COEF		2
+#define VARIO_NEGATIVE_BASE_FREQ 			200
+#define VARIO_NEGATIVE_FREQ_COEF			(VARIO_SINK_LUT_MAX_ITEM-VARIO_NEGATIVE_UPPER_LIMIT)
 
 
-#define VARIO_AUTO_OFF_UP_DOWN_LIMIT	10
+#define VARIO_AUTO_OFF_UP_DOWN_LIMIT		120
 
 static int32_t Vario_UnderSample = 0;
-static bool Vario_Mode_Stationary = true;
+static bool Vario_Mode_Stationary = false;
+
+
 
 
 void VarioToggleStationaryMode()
 {
 	if (Vario_Mode_Stationary)
 	{
+		UartXmitString("Detector OFF\n\r");
 		BuzzerDemoSoundTacTacOff();
 		Vario_Mode_Stationary = false;
 	}
 	else
 	{
+		UartXmitString("Detector ON\n\r");
 		BuzzerDemoSoundTacTacOn();
 		Vario_Mode_Stationary = true;
 	}
-
-	BuzzerSetQueue( 0, 100);
 }
 
 void VarioDisableFor(int32_t time_ms)
 {
 	Vario_UnderSample = time_ms;
 }
-
-
-bool Vario(int32_t PressureDerivated)
+static uint16_t Vario_Delay_Stationary = 0;
+#define VARIO_LUT_LIFTY_OFFSET	30
+bool Vario(int32_t Vz)
 {
 	if (Vario_UnderSample < TASK_PERIOD_MS )
 	{
-		int vario_tone;
 		// POSITIVE: LIFT
-		if(PressureDerivated >= VARIO_POSITIVE_LIMIT_1)
+		if(Vz >= VARIO_POSITIVE_LOWER_LIMIT)
 		{
 
-			if(PressureDerivated >= VARIO_POSITIVE_LIMIT_6)
+			if(Vz >= VARIO_POSITIVE_UPPER_LIMIT)
 			{
-				PressureDerivated = VARIO_POSITIVE_LIMIT_6;			// caps positive value
+				Vz = VARIO_POSITIVE_UPPER_LIMIT;			// caps positive value
 			}
-			if(PressureDerivated < VARIO_POSITIVE_LIMIT_2)
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_1+VARIO_POSITIVE_FREQ_COEF_1;
-				BuzzerSetQueue( vario_tone, 100);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_1;
-			}
-			else if(PressureDerivated < VARIO_POSITIVE_LIMIT_3)
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_2+VARIO_POSITIVE_FREQ_COEF_2;
-				BuzzerSetQueue( vario_tone, 20);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_2;
-			}
-			else if(PressureDerivated < VARIO_POSITIVE_LIMIT_4)
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_3+VARIO_POSITIVE_FREQ_COEF_3;
-				BuzzerSetQueue( vario_tone, 20);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_3;
-			}
-			else if(PressureDerivated < VARIO_POSITIVE_LIMIT_5)
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_4+VARIO_POSITIVE_FREQ_COEF_4;
-				BuzzerSetQueue( vario_tone, 20);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_4;
-			}
-			else if(PressureDerivated < VARIO_POSITIVE_LIMIT_6)
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_5+VARIO_POSITIVE_FREQ_COEF_5;
-				BuzzerSetQueue( vario_tone, 20);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_5;
-			}
-			else
-			{
-				vario_tone = PressureDerivated*VARIO_POSITIVE_FREQ_COEF_5+VARIO_POSITIVE_FREQ_COEF_6;
-				BuzzerSetQueue( vario_tone, 20);
-				Vario_UnderSample = 600 - PressureDerivated*VARIO_POSITIVE_BPS_COEF_6;
-			}
-			if (Vario_UnderSample > 600)
-				Vario_UnderSample = 600;
-
-
+			uint16_t StepLUT = Vz/VARIO_LUT_STEP;
+			Vario_UnderSample = RepeatTimeLUT[StepLUT];
+			BuzzerSetQueue( BeepFreqLUT[StepLUT], BeepLenLUT[StepLUT]);
+			Vario_Delay_Stationary = 200;
 		}
-		// ZERO STATIONARY
-		if(Vario_Mode_Stationary)
+		// ZERO : STATIONARY
+		else if((Vz >= VARIO_STATIONARY_LOWER_LIMIT)&&(Vz < VARIO_STATIONARY_UPPER_LIMIT))
 		{
-			if((PressureDerivated >= VARIO_STATIONARY_LOWER_LIMIT)&&(PressureDerivated <= VARIO_STATIONARY_UPPER_LIMIT))
+			if (Vario_Delay_Stationary > TASK_PERIOD_MS)
+				Vario_Delay_Stationary -= TASK_PERIOD_MS;
+			else if(Vario_Mode_Stationary)
 			{
-				vario_tone = 20;
-				BuzzerSetQueue( vario_tone, VARIO_STATIONARY_BASE_LEN);
-				Vario_UnderSample = 400 - PressureDerivated * 100;
-				if ((Vario_UnderSample< 100)|| (Vario_UnderSample> 1000))
-					Vario_UnderSample= 100;
-				//Vario_UnderSample = 1000;
+				Vario_UnderSample = (-5*Vz)+200;
+				BuzzerSetQueue( (140+Vz)/2, 40);
 			}
 		}
 		// NEGATIVE: SINK
-		if(SinkAlarmValue != SINK_ALARM_DISABLE)
+		else if(Vz <= SinkGetAlarmValue())
 		{
-			int16_t sinkthresvalue = (int16_t)SinkAlarmValue;
-			sinkthresvalue = sinkthresvalue*-16;
-			if((PressureDerivated <= sinkthresvalue))
+
+			if(SinkGetAlarmValue() != 0)
 			{
-				if (PressureDerivated <= VARIO_NEGATIVE_UPPER_LIMIT)	// cap negative value
-					PressureDerivated = VARIO_NEGATIVE_UPPER_LIMIT;
-				vario_tone = VARIO_NEGATIVE_BASE_FREQ + PressureDerivated*VARIO_NEGATIVE_FREQ_COEF;
-				BuzzerSetQueue(  vario_tone, 200);
-				Vario_UnderSample = 500;
+				if( Vz < -1600)
+					Vz = -1600;
+				uint32_t freq = (364*Vz)/2048+359;
+				BuzzerSetNow(  freq, 200);
+				Vario_UnderSample = 150;
 			}
 		}
 	}
@@ -183,7 +112,7 @@ bool Vario(int32_t PressureDerivated)
 		Vario_UnderSample-=TASK_PERIOD_MS;
 	}
 
-	if( abs(PressureDerivated) >= VARIO_AUTO_OFF_UP_DOWN_LIMIT )
+	if( abs(Vz) >= VARIO_AUTO_OFF_UP_DOWN_LIMIT )
 		return 1;
 	else
 		return 0; // no pressure change, return 0 for auto-power-off

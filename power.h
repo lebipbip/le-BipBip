@@ -14,9 +14,9 @@ void BatteryCheckInit(void);
 bool BatteryIsLow(void);
 void BatteryCheck(void);
 void BatteryCheckStop(void);
-unsigned char AutoPowerOffCheck(void);
+bool AutoPowerOffTrue(void);
 void AutoPowerOffReset(void);
-
+void BatteryPrintVoltage(void);
 #define PowerEnterUltraLowPower() (__bis_SR_register(LPM4_bits + GIE))       // Enter LPM4 w/ interrupts enabled
 #define PowerExitUltraLowPower() (_BIC_SR_IRQ(LPM4_bits))                 	// Clear LPM4 bits from 0(SR)
 

@@ -51,29 +51,31 @@ void SinkSettingExitSound(void)
 	BuzzerStopSound();
 }
 
-#define SINK_MENU_LOOP_MS        		20        //ms
-#define SINK_MENU_TIMEOUT        		30*1000/SINK_MENU_LOOP_MS
-
-#define SINK_ALARM_PLAY_DELAY_MS		1500 //ms
-#define SINK_ALARM_PLAY_DELAY 			SINK_ALARM_PLAY_DELAY_MS/SINK_MENU_LOOP_MS
-#define SINK_SETTING_PLAY_DELAY			5
-#define SINK_SOUND_FREQ					200
-#define SINK_SOUND_DISABLE_FREQ			100
-#define SINK_SOUND_DISABLE_LEN			1000
-#define SINK_SOUND_BIP_ON_LEN			200
-#define SINK_SOUND_BIP_OFF_LEN			200
-#define SINK_SETTING_PLAY_PAUSE			(SINK_SOUND_BIP_ON_LEN+SINK_SOUND_BIP_OFF_LEN)/SINK_MENU_LOOP_MS
-
-
-char SinkAlarmValue = SINK_ALARM_DEFAULT; // x-0.5m/s (5 = -2.5m/s)
-static char SinkSettingPlayState = 0;
-static int SinkSettingPlayDelay;
-static char SinkSettingPlayLoop = 0;
-static char SinkSettingPlayPause = SINK_SETTING_PLAY_PAUSE;
 
 
 
-#undef DEBUG
+static uint8_t SinkAlarmState = SINK_ALARM_DEFAULT; // x-0.5m/s (5 = -2.5m/s)
+static uint8_t SinkSettingPlayState = 0;
+static uint16_t SinkSettingPlayDelay;
+static uint8_t SinkSettingPlayLoop = 0;
+static uint16_t SinkSettingPlayPause = SINK_SETTING_PLAY_PAUSE;
+#define SINK_STATE_TO_VALUE_COEF		-50
+static int16_t SinkAlarmValue = SINK_ALARM_DEFAULT*SINK_STATE_TO_VALUE_COEF;
+#define SINK_VALUE_DISABLE		SINK_ALARM_DISABLE*SINK_STATE_TO_VALUE_COEF
+
+int16_t SinkGetAlarmValue()
+{
+	if (SinkAlarmValue != SINK_VALUE_DISABLE)
+		return SinkAlarmValue;
+	else
+		return 0;
+}
+
+void SinkSetAlarmState(uint8_t state)
+{
+	SinkAlarmValue = (int16_t)SinkAlarmState*SINK_STATE_TO_VALUE_COEF;
+}
+
 
 void SinkSettingPlay(void)
 {
@@ -91,7 +93,7 @@ void SinkSettingPlay(void)
 			#endif // DEBUG
 			if (SinkSettingPlayDelay-- == 0)
 			{
-				SinkSettingPlayLoop = 	SinkAlarmValue;
+				SinkSettingPlayLoop = 	SinkAlarmState;
 				SinkSettingPlayState = 	SINK_STATE_PLAY_START;
 				SinkSettingPlayDelay = SINK_SETTING_PLAY_DELAY;
 
@@ -105,7 +107,7 @@ void SinkSettingPlay(void)
 				if ( SinkSettingPlayLoop == SINK_ALARM_DISABLE)	// sink alarm disabled, play specific sound
 				{
 					BuzzerSetQueue(SINK_SOUND_DISABLE_FREQ, SINK_SOUND_DISABLE_LEN);
-					SinkSettingPlayPause = SINK_SETTING_PLAY_PAUSE*10;
+					SinkSettingPlayPause = SINK_ALARM_PLAY_DELAY+SINK_SOUND_DISABLE_LEN/SINK_MENU_LOOP_MS;
 					SinkSettingPlayState = SINK_STATE_PLAYING;
 
 				}
@@ -137,35 +139,39 @@ void SinkSettingPlay(void)
 void SinkSettingButtonPushed(void)
 {
 
-	SinkAlarmValue++;
-	if ( SinkAlarmValue > SINK_ALARM_MAX)
-		SinkAlarmValue = SINK_ALARM_MIN;
+	SinkAlarmState++;
+	if ( SinkAlarmState > SINK_ALARM_MAX)
+		SinkAlarmState = SINK_ALARM_MIN;
+	SinkSetAlarmState(SinkAlarmState);
 	SinkSettingPlayState = SINK_STATE_IDDLE;
 	SinkSettingPlayDelay = SINK_SETTING_PLAY_DELAY;
 }
 
 void SinkSetting(void)
 {
-	uint8_t button_state;
-	int timeout = SINK_MENU_TIMEOUT;
+	bool button_state, button_prev_state;
+	uint16_t timeout = SINK_MENU_TIMEOUT;
 
 	SinkSettingEnterSound();
 	while(ButtonState())		// wait for button to be released
 		delay_ms(1);
+	CheckBuzzerStart();
 	SinkSettingPlayDelay = SINK_SETTING_PLAY_DELAY;
 	SinkSettingPlayState = SINK_STATE_IDDLE;
+	button_prev_state = ButtonState();
 	do
 	{
-		delay_ms(SINK_MENU_LOOP_MS);
-		button_state = Button();
-		if (button_state == BUTTON_SHORT)
+		CheckBuzzer(false);
+		button_state = ButtonState();
+		if ((!button_state)&&(button_prev_state))
 		{
 			timeout = SINK_MENU_TIMEOUT;
 			SinkSettingButtonPushed();
 		}
+		button_prev_state = button_state;
 		SinkSettingPlay();
 		BuzzerTask();
-	}while( (button_state != BUTTON_LONG) && timeout-- );
+	}while( (Button() != BUTTON_LONG) && timeout-- );
 	SinkSettingExitSound(); 	// exit sink settings
 
 }
